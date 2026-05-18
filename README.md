@@ -1,6 +1,7 @@
 # ShenEternity-Agent
 
-一个基于 Rust 构建的终端 LLM 聊天客户端，使用 `ratatui` 和 `crossterm` 打造现代化的 TUI 界面。
+一个基于 Rust 构建的终端 LLM Agent客户端，使用 `ratatui` 和 `crossterm` 打造现代化的 TUI 界面。
+目前只写完聊天功能。
 
 ## ✨ 特性
 
@@ -137,30 +138,6 @@ history: Arc::new(RwLock::new(vec![Message {
     role: "system".to_string(),
     content: "你是一个编程助手".to_string(), // 修改此处
 }])),
-```
-
-### 调整历史消息数量
-
-编辑 [src/data/llm.rs](file:///home/sheneternity/Work/Project/sheneternity-agent/src/data/llm.rs#L38) 中的 `max_history`：
-
-```rust
-max_history: 12, // 修改此处
-```
-
-## 🎯 界面布局
-
-```
-┌─────────────────────────────────────────────────────┐
-│   模式显示     │                                     │ 
-├──────────────┬                                      │
-│ 当前聊天列表   │                                      │
-│              │         聊天窗口                      │
-│              │                                      │
-├──────────────┤                                      │
-│ 历史聊天列表   │                                      │
-│              ├──────────────────────────────────────┤
-│              │           输入框                      │
-└──────────────┴──────────────────────────────────────┘
 ```
 
 ## 📄 许可证
