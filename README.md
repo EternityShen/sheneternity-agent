@@ -16,8 +16,8 @@
 
 ### 前置要求
 
-- Rust 1.70+ (Edition 2024)
-- Cargo 包管理器
+- Rust 
+- Cargo
 
 ### 构建
 

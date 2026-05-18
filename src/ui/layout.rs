@@ -11,7 +11,7 @@ use crate::{
     ui::component::{app_mode, chat_window, current_chat_list, histoy_caht_list, input_bar},
 };
 
-pub fn draw(frame: &mut Frame, app: &App) {
+pub fn draw(frame: &mut Frame, app: &mut App) {
     let chunks_v = Layout::vertical([
         Constraint::Length(1),
         Constraint::Min(10),
