@@ -78,36 +78,6 @@ Normal → Input → CurrChat → ScrollChat → Normal
 | | `k` | 向上滚动 |
 | | `Tab` | 切换到 Normal 模式 |
 
-## 🏗️ 项目结构
-
-```
-sheneternity-agent/
-├── src/
-│   ├── main.rs              # 应用入口，终端初始化
-│   ├── lib.rs               # 模块导出
-│   ├── data/
-│   │   ├── mod.rs           # 数据模块
-│   │   ├── app.rs           # 应用状态管理
-│   │   └── llm.rs           # LLM API 客户端
-│   ├── event/
-│   │   ├── mod.rs           # 事件模块
-│   │   └── keyboard.rs      # 键盘事件处理
-│   ├── ui/
-│   │   ├── mod.rs           # UI 模块
-│   │   ├── layout.rs        # 主布局渲染
-│   │   └── component/
-│   │       ├── mod.rs       # 组件模块
-│   │       ├── app_mode.rs  # 模式显示组件
-│   │       ├── chat_window.rs    # 聊天窗口组件
-│   │       ├── input_bar.rs      # 输入框组件
-│   │       ├── current_chat_list.rs  # 当前聊天列表
-│   │       └── histoy_caht_list.rs   # 历史聊天列表
-│   └── utils/
-│       └── mod.rs           # 工具函数
-├── Cargo.toml               # 项目配置
-└── Cargo.lock               # 依赖锁定文件
-```
-
 ## 🔧 技术栈
 
 - **[ratatui](https://github.com/ratatui-org/ratatui)** - Rust 终端 UI 框架
