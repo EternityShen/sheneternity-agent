@@ -18,7 +18,7 @@ pub fn draw(frame: &mut Frame, rect: Rect, app: &App) {
         .rev()
         .enumerate()
         .map(|(i, message)| {
-            let is_selected = app.current_chat_list_state.selected() == Some(i);
+            let is_selected = app.histoy_chat_list_state.selected() == Some(i);
 
             let style = if is_selected {
                 Style::default().fg(Color::Gray).bg(Color::Magenta)
@@ -27,15 +27,9 @@ pub fn draw(frame: &mut Frame, rect: Rect, app: &App) {
             };
 
             let span = if is_selected {
-                Span::styled(
-                    format!(">{} {}", message.role.clone(), message.content.clone()),
-                    style,
-                )
+                Span::styled(format!("> {}", message.content.clone().unwrap()), style)
             } else {
-                Span::styled(
-                    format!("{} {}", message.role.clone(), message.content.clone()),
-                    style,
-                )
+                Span::styled(format!("{}", message.content.clone().unwrap()), style)
             };
 
             ListItem::new(Line::from(span))

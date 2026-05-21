@@ -8,6 +8,7 @@ pub enum Mode {
     Input,
     CurrChat,
     ScrollChat,
+    Code,
 }
 
 pub struct App {
@@ -18,8 +19,13 @@ pub struct App {
     pub exit: bool,
     pub cursor: bool,
     pub scroll: u16,
-    pub current_chat_list_state: ListState,
     pub histoy_chat_list_state: ListState,
+    pub l_histoy_chat_list_state: ListState,
+}
+
+pub struct Code {
+    pub language: String,
+    pub code: String,
 }
 
 impl Default for App {
@@ -35,15 +41,15 @@ impl Default for App {
             exit: false,
             cursor: false,
             scroll: 0,
-            current_chat_list_state: ListState::default(),
             histoy_chat_list_state: ListState::default(),
+            l_histoy_chat_list_state: ListState::default(),
         }
     }
 }
 
 impl App {
     pub fn next_current_chat_select(&mut self) {
-        let i = match self.current_chat_list_state.selected() {
+        let i = match self.histoy_chat_list_state.selected() {
             Some(i) => {
                 if i >= self.llm_handle.history.read().unwrap().len() - 1 {
                     0
@@ -54,10 +60,10 @@ impl App {
             None => 0,
         };
 
-        self.current_chat_list_state.select(Some(i));
+        self.histoy_chat_list_state.select(Some(i));
     }
     pub fn prew_current_chat_select(&mut self) {
-        let i = match self.current_chat_list_state.selected() {
+        let i = match self.histoy_chat_list_state.selected() {
             Some(i) => {
                 if i == 0 {
                     self.llm_handle.history.read().unwrap().len() - 1
@@ -68,7 +74,7 @@ impl App {
             None => 0,
         };
 
-        self.current_chat_list_state.select(Some(i));
+        self.histoy_chat_list_state.select(Some(i));
     }
 
     pub fn scroll_k(&mut self) {

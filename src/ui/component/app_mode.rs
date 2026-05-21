@@ -22,6 +22,8 @@ pub fn draw(frame: &mut Frame, rect: Rect, app: &App) {
             Paragraph::new(Text::styled("Scroll", Style::default().fg(Color::White)))
                 .alignment(HorizontalAlignment::Center)
         }
+        Mode::Code => Paragraph::new(Text::styled("Code", Style::default().fg(Color::White)))
+            .alignment(HorizontalAlignment::Center),
     };
 
     let mode_widget = mode_widget.block(

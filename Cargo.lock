@@ -1988,6 +1988,7 @@ dependencies = [
 name = "sheneternity-agent"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "chrono",
  "crossterm",
  "futures-util",

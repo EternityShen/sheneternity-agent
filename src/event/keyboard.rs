@@ -20,12 +20,14 @@ pub async fn event(app: &mut App) {
 
                 if key.code == KeyCode::Enter && app.mode == Mode::Input {
                     let input = app.input.clone();
+                    if !input.is_empty() {
+                        return;
+                    }
                     app.input.clear();
-                    app.llm_handle.llm_output.write().unwrap().clear();
 
                     let mut llm_handle = app.llm_handle.clone();
                     tokio::spawn(async move {
-                        llm_handle.chat(input).await;
+                        let _ = llm_handle.chat(input).await;
                     });
                 }
             }
@@ -50,6 +52,7 @@ pub async fn event(app: &mut App) {
                     app.scroll_k();
                 }
             }
+            Mode::Code => {}
         }
 
         if key.code == KeyCode::Tab {
@@ -58,9 +61,10 @@ pub async fn event(app: &mut App) {
                 Mode::Normal => app.mode = Mode::Input,
                 Mode::CurrChat => app.mode = Mode::ScrollChat,
                 Mode::ScrollChat => {
-                    app.mode = Mode::Normal;
+                    app.mode = Mode::Code;
                     app.scroll = 0;
                 }
+                Mode::Code => app.mode = Mode::Normal,
             }
         }
     }

@@ -1,20 +1,76 @@
-use std::sync::{Arc, RwLock};
+use std::{
+    fs::read_to_string,
+    sync::{Arc, RwLock},
+};
 
 use futures_util::StreamExt;
+
 use reqwest::Client;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Role {
+    System,
+    User,
+    Assistant,
+    Tool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ToolCall {
+    pub id: String,
+
+    #[serde(rename = "type")]
+    pub kind: String,
+
+    pub function: ToolFunctionCall,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ToolFunctionCall {
+    pub name: String,
+    pub arguments: String,
+}
 
 #[derive(Serialize, Clone)]
 pub struct Message {
-    pub role: String,
-    pub content: String,
+    pub role: Role,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool_calls: Option<Vec<ToolCall>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool_call_id: Option<String>,
+    #[serde(skip_serializing, default)]
+    pub think_content: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct Tool {
+    #[serde(rename = "type")]
+    pub kind: String,
+
+    pub function: FunctionDef,
+}
+
+#[derive(Serialize)]
+pub struct FunctionDef {
+    pub name: String,
+    pub description: String,
+    pub parameters: serde_json::Value,
 }
 
 #[derive(Serialize)]
 struct RequestBody {
     model: String,
     messages: Vec<Message>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tools: Option<Vec<Tool>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tool_choice: Option<String>,
     stream: bool,
 }
 
@@ -25,21 +81,23 @@ pub struct LLM {
     pub history: Arc<RwLock<Vec<Message>>>,
     max_history: usize,
     endpoint: String,
-    pub llm_output: Arc<RwLock<String>>,
 }
 
 impl LLM {
     pub fn new(api_key: String, endpoint: String) -> Self {
+        let prompt = read_to_string("./debug/Prompt.txt").unwrap();
         Self {
             client: Client::new(),
             api_key,
             history: Arc::new(RwLock::new(vec![Message {
-                role: "system".to_string(),
-                content: "你是一个编程助手".to_string(),
+                role: Role::System,
+                content: Some(prompt),
+                tool_calls: None,
+                tool_call_id: None,
+                think_content: None,
             }])),
             max_history: 12,
             endpoint,
-            llm_output: Arc::new(RwLock::new(String::new())),
         }
     }
 
@@ -53,18 +111,35 @@ impl LLM {
         }
     }
 
-    pub async fn chat(&mut self, input: String) {
+    pub async fn chat(&mut self, input: String) -> anyhow::Result<()> {
         {
             let mut h = self.history.write().unwrap();
             h.push(Message {
-                role: "user".to_string(),
-                content: input,
+                role: Role::User,
+                content: Some(input),
+                tool_call_id: None,
+                tool_calls: None,
+                think_content: None,
             });
         }
 
         let body = RequestBody {
             model: "llm".to_string(),
-            messages: self.history.read().unwrap().clone(),
+            messages: self
+                .history
+                .read()
+                .unwrap()
+                .iter()
+                .map(|msg| Message {
+                    role: msg.role.clone(),
+                    content: msg.content.clone(),
+                    tool_calls: msg.tool_calls.clone(),
+                    tool_call_id: msg.tool_call_id.clone(),
+                    think_content: None,
+                })
+                .collect(),
+            tools: None,
+            tool_choice: None,
             stream: true,
         };
 
@@ -79,8 +154,16 @@ impl LLM {
 
         let mut stream = result.bytes_stream();
 
-        let mut reply = String::new();
-
+        {
+            let mut h = self.history.write().unwrap();
+            h.push(Message {
+                role: Role::Assistant,
+                content: Some(String::new()),
+                tool_calls: None,
+                tool_call_id: None,
+                think_content: Some(String::new()),
+            });
+        }
         while let Some(chunk) = stream.next().await {
             let chunk = chunk.unwrap();
 
@@ -89,23 +172,46 @@ impl LLM {
             for line in text.lines() {
                 if let Some(data) = line.strip_prefix("data: ") {
                     if data == "[DONE]" {
-                        self.history.write().unwrap().push(Message {
-                            role: "assistant".to_string(),
-                            content: reply.clone(),
-                        });
-                        return;
+                        return Ok(());
                     }
 
-                    if let Ok(json) = serde_json::from_str::<serde_json::Value>(data)
-                        && let Some(content) = json["choices"][0]["delta"]["content"].as_str()
-                    {
-                        self.llm_output.write().unwrap().push_str(content);
-                        reply.push_str(content);
-
-                        std::io::Write::flush(&mut std::io::stdout()).unwrap();
+                    if let Ok(json) = serde_json::from_str::<serde_json::Value>(data) {
+                        if let Some(content) = json["choices"][0]["delta"]["content"].as_str() {
+                            match self.history.write() {
+                                Ok(mut h) => {
+                                    let len = h.clone().len() - 1;
+                                    if let Some(ref mut s) = h[len].content {
+                                        s.push_str(content);
+                                    }
+                                }
+                                Err(e) => {
+                                    eprintln!("{}", e);
+                                    panic!()
+                                }
+                            }
+                            std::io::Write::flush(&mut std::io::stdout())?;
+                        }
+                        if let Some(content) =
+                            json["choices"][0]["delta"]["reasoning_content"].as_str()
+                        {
+                            match self.history.write() {
+                                Ok(mut h) => {
+                                    let len = h.clone().len() - 1;
+                                    if let Some(ref mut s) = h[len].think_content {
+                                        s.push_str(content);
+                                    }
+                                }
+                                Err(e) => {
+                                    eprintln!("{}", e);
+                                    panic!()
+                                }
+                            }
+                            std::io::Write::flush(&mut std::io::stdout())?;
+                        }
                     }
                 }
             }
         }
+        Ok(())
     }
 }
