@@ -1,94 +1,65 @@
 use ratatui::{
     Frame,
-    layout::{Constraint, Layout},
+    layout::{Constraint, Layout, Spacing},
     style::{Color, Style},
-    symbols,
+    symbols::merge::MergeStrategy,
     widgets::{Block, Borders},
 };
 
-use crate::{
-    data::app::App,
-    ui::component::{app_mode, chat_window, current_chat_list, histoy_caht_list, input_bar},
-};
-
-pub fn draw(frame: &mut Frame, app: &mut App) {
-    let chunks_v = Layout::vertical([
-        Constraint::Length(1),
-        Constraint::Min(10),
-        Constraint::Length(1),
-    ])
-    .spacing(0)
-    .split(frame.area());
-
-    let chunks_h = Layout::horizontal([
-        Constraint::Length(1),
-        Constraint::Min(10),
-        Constraint::Length(1),
-    ])
-    .spacing(1)
-    .split(chunks_v[1]);
-
+pub fn draw(frame: &mut Frame) {
     let block = Block::default()
         .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::Blue))
         .title("ShenEternity-Agent")
-        .title_style(Style::default().fg(Color::Blue))
-        .border_style(Style::default().fg(Color::LightBlue))
-        .border_set(symbols::border::ROUNDED)
-        .title_alignment(ratatui::layout::HorizontalAlignment::Center);
+        .title_style(Style::default().fg(Color::LightBlue));
 
     frame.render_widget(block, frame.area());
 
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::LightYellow))
-        .border_set(symbols::border::DOUBLE);
-
-    frame.render_widget(block, chunks_h[1]);
+    let chunks_h = Layout::horizontal([
+        Constraint::Length(1),
+        Constraint::Min(30),
+        Constraint::Length(1),
+    ])
+    .spacing(1)
+    .split(frame.area());
 
     let chunks_v = Layout::vertical([
         Constraint::Length(1),
-        Constraint::Min(10),
+        Constraint::Min(30),
         Constraint::Length(1),
     ])
     .spacing(0)
     .split(chunks_h[1]);
 
-    let chunks_h = Layout::horizontal([
-        Constraint::Length(1),
-        Constraint::Min(10),
-        Constraint::Length(1),
-    ])
-    .spacing(1)
-    .split(chunks_v[1]);
+    let chunks_v = Layout::vertical([Constraint::Min(30), Constraint::Length(3)])
+        .spacing(Spacing::Overlap(1))
+        .split(chunks_v[1]);
 
-    let chunks_h = Layout::horizontal([Constraint::Percentage(20), Constraint::Percentage(80)])
-        .spacing(1)
-        .split(chunks_h[1]);
+    let top_chunk = chunks_v[0];
+    let bottom_chunk = chunks_v[1];
 
-    let left_chunks_v = Layout::vertical([
-        Constraint::Length(3),
-        Constraint::Percentage(60),
-        Constraint::Percentage(40),
-    ])
-    .spacing(0)
-    .split(chunks_h[0]);
+    let top_chunks_h = Layout::horizontal([Constraint::Percentage(80), Constraint::Percentage(20)])
+        .spacing(Spacing::Overlap(1))
+        .split(top_chunk);
 
-    let left_top = left_chunks_v[0];
-    let left_mid = left_chunks_v[1];
-    let left_bottom = left_chunks_v[2];
+    let bottom_chunks_h =
+        Layout::horizontal([Constraint::Percentage(60), Constraint::Percentage(40)])
+            .spacing(Spacing::Overlap(1))
+            .split(bottom_chunk);
 
-    app_mode::draw(frame, left_top, app);
-    current_chat_list::draw(frame, left_mid, app);
-    histoy_caht_list::draw(frame, left_bottom, app);
+    let top_left = top_chunks_h[0];
+    let top_right = top_chunks_h[1];
 
-    let right_chunks_v =
-        Layout::vertical([Constraint::Min(30), Constraint::Length(app.input_bar_size)])
-            .spacing(0)
-            .split(chunks_h[1]);
+    let bottom_left = bottom_chunks_h[0];
+    let bottom_right = bottom_chunks_h[1];
 
-    let right_top = right_chunks_v[0];
-    let right_bottom = right_chunks_v[1];
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::Blue))
+        .merge_borders(MergeStrategy::Exact);
 
-    chat_window::draw(frame, right_top, app);
-    input_bar::draw(frame, right_bottom, app);
+    frame.render_widget(block.clone(), top_left);
+    frame.render_widget(block.clone(), top_right);
+    frame.render_widget(block.clone(), bottom_left);
+    frame.render_widget(block.clone(), bottom_right);
 }
