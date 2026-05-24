@@ -20,7 +20,7 @@ async fn main() -> io::Result<()> {
 
     loop {
         terminal.draw(|frame| {
-            ui::layout::draw(frame);
+            ui::layout::draw(frame, &mut app);
         })?;
         event::keyboard::event(&mut app).await;
         if app.is_quit {

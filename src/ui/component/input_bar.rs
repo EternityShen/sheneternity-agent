@@ -2,6 +2,7 @@ use ratatui::{
     Frame,
     layout::Rect,
     style::{Color, Style},
+    symbols::merge::MergeStrategy,
     text::Text,
     widgets::{Block, Borders, Paragraph},
 };
@@ -16,7 +17,8 @@ pub fn draw(frame: &mut Frame, rect: Rect, app: &mut App) -> anyhow::Result<()> 
     .block(
         Block::default()
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Yellow)),
+            .border_style(Style::default().fg(Color::Yellow))
+            .merge_borders(MergeStrategy::Exact),
     );
     frame.render_widget(text, rect);
     Ok(())

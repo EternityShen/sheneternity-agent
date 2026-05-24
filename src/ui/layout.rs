@@ -6,7 +6,12 @@ use ratatui::{
     widgets::{Block, Borders},
 };
 
-pub fn draw(frame: &mut Frame) {
+use crate::{
+    data::app::App,
+    ui::component::{chat_window, input_bar},
+};
+
+pub fn draw(frame: &mut Frame, app: &mut App) {
     let block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::default().fg(Color::Blue))
@@ -58,8 +63,9 @@ pub fn draw(frame: &mut Frame) {
         .border_style(Style::default().fg(Color::Blue))
         .merge_borders(MergeStrategy::Exact);
 
-    frame.render_widget(block.clone(), top_left);
     frame.render_widget(block.clone(), top_right);
-    frame.render_widget(block.clone(), bottom_left);
     frame.render_widget(block.clone(), bottom_right);
+
+    chat_window::draw(frame, top_left, app).unwrap();
+    input_bar::draw(frame, bottom_left, app).unwrap();
 }

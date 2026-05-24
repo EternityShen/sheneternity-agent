@@ -34,17 +34,64 @@ pub struct ToolFunctionCall {
     pub arguments: String,
 }
 
+pub enum DisplayItem {
+    User(String),
+    Think(String),
+    Chat(String),
+    ToolCall(String),
+    ToolResult(String),
+}
+
 #[derive(Serialize, Clone)]
 pub struct Message {
     pub role: Role,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub content: Option<String>,
+    pub chat_content: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_calls: Option<Vec<ToolCall>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_call_id: Option<String>,
     #[serde(skip_serializing, default)]
     pub think_content: Option<String>,
+}
+
+impl Message {
+    pub fn to_display_items(&self) -> Vec<DisplayItem> {
+        let mut items = Vec::new();
+        match self.role {
+            Role::System => {
+                if let Some(c) = &self.chat_content {
+                    items.push(DisplayItem::Chat(format!("[System] {}", c)));
+                }
+            }
+
+            Role::User => {
+                if let Some(c) = &self.chat_content {
+                    items.push(DisplayItem::User(c.clone()));
+                }
+            }
+
+            Role::Assistant => {
+                if let Some(t) = &self.think_content {
+                    items.push(DisplayItem::Think(t.clone()));
+                }
+                if let Some(tc) = &self.tool_calls {
+                    for call in tc {
+                        items.push(DisplayItem::ToolCall(format!("{:?}", call)));
+                    }
+                }
+                if let Some(c) = &self.chat_content {
+                    items.push(DisplayItem::Chat(c.clone()));
+                }
+            }
+            Role::Tool => {
+                if let Some(c) = &self.chat_content {
+                    items.push(DisplayItem::Chat(c.clone()));
+                }
+            }
+        }
+        items
+    }
 }
 
 #[derive(Serialize)]
@@ -91,7 +138,7 @@ impl LLM {
             api_key,
             history: Arc::new(RwLock::new(vec![Message {
                 role: Role::System,
-                content: Some(prompt),
+                chat_content: Some(prompt),
                 tool_calls: None,
                 tool_call_id: None,
                 think_content: None,
@@ -116,7 +163,7 @@ impl LLM {
             let mut h = self.history.write().unwrap();
             h.push(Message {
                 role: Role::User,
-                content: Some(input),
+                chat_content: Some(input),
                 tool_call_id: None,
                 tool_calls: None,
                 think_content: None,
@@ -132,7 +179,7 @@ impl LLM {
                 .iter()
                 .map(|msg| Message {
                     role: msg.role.clone(),
-                    content: msg.content.clone(),
+                    chat_content: msg.chat_content.clone(),
                     tool_calls: msg.tool_calls.clone(),
                     tool_call_id: msg.tool_call_id.clone(),
                     think_content: None,
@@ -158,7 +205,7 @@ impl LLM {
             let mut h = self.history.write().unwrap();
             h.push(Message {
                 role: Role::Assistant,
-                content: Some(String::new()),
+                chat_content: Some(String::new()),
                 tool_calls: None,
                 tool_call_id: None,
                 think_content: Some(String::new()),
@@ -180,7 +227,7 @@ impl LLM {
                             match self.history.write() {
                                 Ok(mut h) => {
                                     let len = h.clone().len() - 1;
-                                    if let Some(ref mut s) = h[len].content {
+                                    if let Some(ref mut s) = h[len].chat_content {
                                         s.push_str(content);
                                     }
                                 }
