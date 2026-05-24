@@ -4,6 +4,7 @@ pub struct App {
     pub llm_handle: LLM,
     pub input: String,
     pub is_quit: bool,
+    pub scroll: u16,
 }
 
 impl Default for App {
@@ -15,8 +16,17 @@ impl Default for App {
             ),
             input: String::new(),
             is_quit: false,
+            scroll: 0,
         }
     }
 }
 
-impl App {}
+impl App {
+    pub fn scroll_up(&mut self) {
+        self.scroll = self.scroll.saturating_sub(1);
+    }
+
+    pub fn scroll_down(&mut self, max: u16) {
+        self.scroll = (self.scroll + 1).min(max);
+    }
+}
