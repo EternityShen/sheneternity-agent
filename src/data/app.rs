@@ -5,6 +5,8 @@ pub struct App {
     pub input: String,
     pub is_quit: bool,
     pub scroll: u16,
+    pub can_auto_scroll: bool,
+    pub curror: bool,
 }
 
 impl Default for App {
@@ -17,6 +19,8 @@ impl Default for App {
             input: String::new(),
             is_quit: false,
             scroll: 0,
+            can_auto_scroll: true,
+            curror: false,
         }
     }
 }
@@ -26,7 +30,11 @@ impl App {
         self.scroll = self.scroll.saturating_sub(1);
     }
 
-    pub fn scroll_down(&mut self, max: u16) {
-        self.scroll = (self.scroll + 1).min(max);
+    pub fn set_auto_scroll(&mut self) {
+        self.can_auto_scroll = !self.can_auto_scroll;
+    }
+
+    pub fn scroll_down(&mut self) {
+        self.scroll = (self.scroll + 1).min(200)
     }
 }

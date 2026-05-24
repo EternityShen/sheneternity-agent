@@ -27,6 +27,15 @@ pub async fn event(app: &mut App) {
                     });
                 }
             }
+            KeyCode::Up => {
+                app.scroll_up();
+            }
+            KeyCode::Tab => {
+                app.set_auto_scroll();
+            }
+            KeyCode::Down => {
+                app.scroll_down();
+            }
             _ => {}
         }
     }

@@ -12,9 +12,14 @@ use crate::data::{app::App, llm::DisplayItem};
 pub fn draw(frame: &mut Frame, rect: Rect, app: &mut App) -> anyhow::Result<()> {
     let lines = build_lines(app);
 
-    let total_lines = lines.len();
-
-    app.scroll = total_lines.saturating_sub(rect.height as usize) as u16;
+    if app.can_auto_scroll {
+        let total_lines = lines.len();
+        if total_lines >= rect.height as usize {
+            app.scroll = total_lines.saturating_sub(rect.height as usize) as u16 + 4;
+        } else {
+            app.scroll = total_lines.saturating_sub(rect.height as usize) as u16;
+        }
+    }
 
     let paragraph = Paragraph::new(lines)
         .block(Block::default().borders(Borders::ALL).title(" Chat "))
@@ -49,7 +54,7 @@ fn build_lines(app: &App) -> Vec<Line<'static>> {
                 lines.push(Line::from(vec![Span::styled(
                     "● User ",
                     Style::default()
-                        .fg(Color::DarkGray)
+                        .fg(Color::Magenta)
                         .add_modifier(Modifier::ITALIC),
                 )]));
 
@@ -59,13 +64,14 @@ fn build_lines(app: &App) -> Vec<Line<'static>> {
                         Style::default().fg(Color::Gray),
                     ))
                 }));
+                lines.push(Line::from("\n"));
             }
 
             DisplayItem::Think(t) => {
                 lines.push(Line::from(vec![Span::styled(
-                    "| Thinking ",
+                    "* Thinking ",
                     Style::default()
-                        .fg(Color::DarkGray)
+                        .fg(Color::Green)
                         .add_modifier(Modifier::ITALIC),
                 )]));
 
@@ -75,13 +81,14 @@ fn build_lines(app: &App) -> Vec<Line<'static>> {
                         Style::default().fg(Color::Gray),
                     ))
                 }));
+                lines.push(Line::from("\n"));
             }
 
             DisplayItem::Chat(c) => {
                 lines.push(Line::from(vec![Span::styled(
                     "| LLM ",
                     Style::default()
-                        .fg(Color::DarkGray)
+                        .fg(Color::Yellow)
                         .add_modifier(Modifier::ITALIC),
                 )]));
 
@@ -91,19 +98,24 @@ fn build_lines(app: &App) -> Vec<Line<'static>> {
                         Style::default().fg(Color::Gray),
                     ))
                 }));
+                lines.push(Line::from("\n"));
             }
+
             DisplayItem::ToolCall(tc) => {
                 lines.push(Line::from(Span::styled(
                     format!("⚙ {}", tc),
                     Style::default().fg(Color::Yellow),
                 )));
+                lines.push(Line::from("\n"));
             }
             DisplayItem::ToolResult(r) => {
                 lines.push(Line::from(Span::styled(
                     format!("✓ {}", r),
                     Style::default().fg(Color::Cyan),
                 )));
+                lines.push(Line::from("\n"));
             }
+
             DisplayItem::System(s) => {
                 lines.push(Line::from(vec![Span::styled(
                     "● System ",
@@ -118,6 +130,7 @@ fn build_lines(app: &App) -> Vec<Line<'static>> {
                         Style::default().fg(Color::Gray),
                     ))
                 }));
+                lines.push(Line::from("\n"));
             }
         }
     }
